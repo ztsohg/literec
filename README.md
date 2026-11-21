@@ -27,3 +27,5 @@ Rust + egui, DXGI / Windows Graphics Capture, WASAPI audio, x264 via ffmpeg.
 - `capture.rs` DXGI + Graphics Capture sessions   - `audio.rs` always-on audio engine
 - `recorder.rs` FPS pacer + ffmpeg pipeline        - `sys.rs` app list + CPU meter
 - `main.rs` UI, presets, settings, tray
+
+This software was obviously written by Claude (Sonnet 5.5 to be exact) as I do not know anything about Rust or WinAPI. If you're an expert at these things - make a pull request with your changes.
