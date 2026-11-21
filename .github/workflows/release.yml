@@ -1,0 +1,82 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Work out version
+        id: ver
+        shell: pwsh
+        run: |
+          $v = "0.0.0-dev"
+          if ("${{ github.ref_type }}" -eq "tag") { $v = "${{ github.ref_name }}".TrimStart("v") }
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Download ffmpeg
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Primary: the GitHub mirror of the gyan.dev builds (reliable from Actions)
+          gh release download --repo GyanD/codexffmpeg --pattern "*essentials_build.zip" --output ffmpeg.zip --clobber
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path ffmpeg.zip)) {
+            Write-Host "Mirror failed, falling back to gyan.dev"
+            Invoke-WebRequest "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" -OutFile ffmpeg.zip
+          }
+          Expand-Archive ffmpeg.zip -DestinationPath ffmpeg_tmp
+          $d = Get-ChildItem ffmpeg_tmp -Directory | Select-Object -First 1
+          New-Item -ItemType Directory -Force dist/ffmpeg | Out-Null
+          Copy-Item "$($d.FullName)\bin\ffmpeg.exe" dist/ffmpeg/
+          Copy-Item "$($d.FullName)\LICENSE" dist/ffmpeg/LICENSE.txt
+          & dist/ffmpeg/ffmpeg.exe -version | Select-Object -First 1
+
+      - name: Portable zip
+        shell: pwsh
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          New-Item -ItemType Directory -Force dist/portable | Out-Null
+          Copy-Item target/release/literec.exe dist/portable/
+          Copy-Item dist/ffmpeg/ffmpeg.exe dist/portable/
+          Copy-Item dist/ffmpeg/LICENSE.txt dist/portable/ffmpeg-LICENSE.txt
+          Copy-Item THIRD_PARTY.txt dist/portable/
+          Compress-Archive -Path dist/portable/* -DestinationPath "dist/LiteRec-portable-$v.zip"
+
+      - name: Installer
+        shell: pwsh
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          choco install innosetup -y --no-progress
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DAppVersion=$v" installer\LiteRec.iss
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LiteRec-${{ steps.ver.outputs.version }}
+          path: |
+            dist/LiteRec-Setup-*.exe
+            dist/LiteRec-portable-*.zip
+
+      - name: Publish release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/LiteRec-Setup-*.exe
+            dist/LiteRec-portable-*.zip

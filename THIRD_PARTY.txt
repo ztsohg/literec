@@ -1,0 +1,6 @@
+LiteRec bundles FFmpeg (ffmpeg.exe) for video encoding.
+
+FFmpeg is licensed under the GNU GPL v3 for this build (see ffmpeg-LICENSE.txt).
+Build provided by gyan.dev: https://www.gyan.dev/ffmpeg/builds/
+FFmpeg project and source code: https://ffmpeg.org/ and https://github.com/FFmpeg/FFmpeg
+The x264 encoder is included in that build: https://www.videolan.org/developers/x264.html
