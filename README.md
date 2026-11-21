@@ -23,9 +23,4 @@ Rust + egui, DXGI / Windows Graphics Capture, WASAPI audio, x264 via ffmpeg.
 - Display numbering in DXGI mode follows your GPU's outputs and may differ from Windows' display order.
 - Settings are saved to %APPDATA%\LiteRec\settings.ini
 
-## Layout
-- `capture.rs` DXGI + Graphics Capture sessions   - `audio.rs` always-on audio engine
-- `recorder.rs` FPS pacer + ffmpeg pipeline        - `sys.rs` app list + CPU meter
-- `main.rs` UI, presets, settings, tray
-
 This software was obviously written by Claude (Sonnet 5.5 to be exact) as I do not know anything about Rust or WinAPI. If you're an expert at these things - make a pull request with your changes.
