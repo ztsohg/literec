@@ -1,6 +1,6 @@
 [package]
-name = "LiteRec"
-version = "1.0.0"
+name = "literec"
+version = "0.2.0"
 edition = "2021"
 build = "build.rs"
 

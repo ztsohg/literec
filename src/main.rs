@@ -78,6 +78,8 @@ struct App {
     prev_fps: usize,
     hide_self: bool,
     hide_applied: Option<bool>,
+    frame_no: u64,
+    dump_after: Option<u64>,
     preview_tex: Option<egui::TextureHandle>,
     last_preview: Instant,
     // ui
@@ -237,7 +239,7 @@ impl App {
             in_devs, out_devs,
             apps: sys::list_apps(), app_sel: None,
             mic, desk, app, engine, last_setup: None,
-            session: None, preview: true, prev_q: 2, prev_fps: 1, hide_self: true, hide_applied: None, preview_tex: None, last_preview: Instant::now(),
+            session: None, preview: true, prev_q: 2, prev_fps: 1, hide_self: true, hide_applied: None, frame_no: 0, dump_after: None, preview_tex: None, last_preview: Instant::now(),
             show_settings: false, settings_tab: 0, logo_tex,
             tray_mode: false, tray: None,
             tray_rec: Arc::new(AtomicBool::new(false)),
@@ -773,14 +775,19 @@ impl App {
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _f: &mut eframe::Frame) {
+        self.frame_no += 1;
+        if self.frame_no == 40 { win::dump_windows("startup +4s"); }
+        if self.dump_after == Some(self.frame_no) { win::dump_windows("5s after X pressed"); self.dump_after = None; }
         if self.quitting.load(Ordering::SeqCst) {
             self.quit_seen.store(true, Ordering::SeqCst);
             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
         }
         // close button -> tray
         if ctx.input(|i| i.viewport().close_requested()) && self.tray_mode && self.tray.is_some() && !self.quitting.load(Ordering::SeqCst) {
+            win::dump_windows("X pressed (before hide)");
             ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
             win::hide_to_tray();
+            self.dump_after = Some(self.frame_no + 20);
         }
         if self.tray_mode && self.tray.is_none() { self.set_tray(ctx, true); }
         if self.hide_applied != Some(self.hide_self) && win::set_capture_excluded(self.hide_self) {
